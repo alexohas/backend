@@ -1,6 +1,6 @@
+require('dotenv').config()
 const express = require("express");
 const app = express();
-const path = require("path");
 const mongoose = require("mongoose");
 const methodOverride = require("method-override");
 var cors = require('cors')
@@ -54,7 +54,7 @@ mongoose
         res.json({ lesson });
     });
 
-    app.listen(1002, () => {
+    app.listen(process.env.PORT, () => {
         console.log("App is listening at port 1002");
     });
   })
