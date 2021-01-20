@@ -5,7 +5,7 @@ const Orders = require("./models/orders");
 
 //Connecting to mongodb.
 mongoose
-  .connect("mongodb+srv://tech:Wittercell@development.8h65w.mongodb.net/after-school?retryWrites=true&w=majority", {
+  .connect("mongodb+srv://ao1283:Valexcon19@cluster0.flsye.mongodb.net/after-school?retryWrites=true&w=majority", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
