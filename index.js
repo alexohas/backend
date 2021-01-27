@@ -1,19 +1,13 @@
 require('dotenv').config()
 const express = require("express");
 const app = express();
-const mongoose = require("mongoose");
 const methodOverride = require("method-override");
 var cors = require('cors')
-const Lessons = require("./models/lessons");
-const Orders = require("./models/orders");
+var ObjectId = require('mongodb').ObjectId;
+const MongoClient = require('mongodb').MongoClient;
 
 //Connecting to mongodb.
-mongoose
-  .connect("mongodb+srv://ao1283:Valexcon19@cluster0.flsye.mongodb.net/after-school?retryWrites=true&w=majority", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => {
+MongoClient.connect("mongodb+srv://ao1283:Valexcon19@cluster0.flsye.mongodb.net/after-school", { useUnifiedTopology: true}, function(err, client) {
       console.log("Mongo Connection Open");
       app.use(cors("*"))
 
@@ -23,41 +17,45 @@ mongoose
     app.use (express.urlencoded({extended: false}))
     //SHOW PRODUCTS
     app.get("/lessons", async (req, res) => {
-        const lessons = await Lessons.find({});
-        res.json({ lessons });
+        try {
+            let val = await client.db('after-school').collection('lessons').find({}).toArray()
+            res.json({ lessons: val });
+        } catch (error) {
+            res.status(400).json({error})
+        }
+        
     });
       
       //SAVE ORDER
       app.post("/orders", async (req, res) => {
           let { contents, user, total } = req.body
-          const order = await Orders.create({ contents, user, total });
+          
+          let val = await client.db().collection('orders').insertOne({ contents, user, total })
           for (let item of contents) {
-              await Lessons.update({_id: item.lesson}, {$inc: {space: -1*item.quantity}})
-          }
-        res.json({ order, message: "Order placed successfully" });
+                await client.db().collection('lessons').updateOne({ _id: new ObjectId(item.lesson) }, { $inc: { space: -1 * item.quantity } })
+            }
+        res.json({ order: val.ops[0], message: "Order placed successfully" });
       });
       
       app.post("/fetch-orders", async (req, res) => {
         let { user } = req.body
-          const orders = await Orders.find({
+          let val = await client.db().collection('orders').find({
               $or: [{
             'user.name': user.name
-        }, {'user.phone': user.phone}] }).populate("contents.lesson");
-      res.json({ orders, message: "Orders retrieved successfully" });
+              }, { 'user.phone': user.phone }]
+          }).toArray()
+
+          for (let order of val) {
+            for (let content of order.contents) {
+                let lesson = await client.db().collection('lessons').findOne({ _id: new ObjectId(content.lesson) })
+                content.lesson = lesson
+            }
+        }
+      res.json({ orders: val, message: "Orders retrieved successfully" });
+      
   });
-
-
-    //SHOW SPECIFIC PRODUCT
-    app.get("/lessons/:id", async (req, res) => {
-        const { id } = req.params;
-        const lesson = await Lessons.findById(id);
-        res.json({ lesson });
-    });
 
     app.listen(process.env.PORT, () => {
-        console.log("App is listening at port 1002");
+        console.log("App is listening at port "+process.env.PORT );
     });
   })
-  .catch((err) => {
-    console.log("Mongo Connection Error");
-  });
