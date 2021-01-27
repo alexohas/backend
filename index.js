@@ -55,7 +55,7 @@ MongoClient.connect("mongodb+srv://ao1283:Valexcon19@cluster0.flsye.mongodb.net/
       
   });
 
-    app.listen(process.env.PORT, () => {
+    app.listen(process.env.PORT||1002, () => {
         console.log("App is listening at port "+process.env.PORT );
     });
   })
